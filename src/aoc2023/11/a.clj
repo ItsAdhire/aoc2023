@@ -15,11 +15,10 @@
       (set)))
 
 (defn line->pos [line row skip?]
-  (->> (map vector 
-            (remove skip? (range)) 
-            line)
-       (filter #(= \# (second %)))
-       (map first)
+  (->> (remove skip? (range))
+       (map vector line)
+       (filter #(= \# (first %)))
+       (map second)
        (map vector (repeat row))
        (map rseq)))
 
