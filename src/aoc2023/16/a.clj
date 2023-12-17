@@ -10,10 +10,10 @@
          (apply merge))))
 
 (defn move [beam]
-  (update beam :pos #(map + % (:dir beam))))
+  (update beam :pos #(mapv + % (:dir beam))))
 
-(defn spawn [beam chr]
-  (case chr
+(defn spawn [beam board]
+  (case (get board (:pos beam) :out-of-board)
     \. [beam]
     \| (if (zero? (get-in beam [:dir 0]))
          [beam]
@@ -24,15 +24,20 @@
          [(assoc beam :dir [1 0])
           (assoc beam :dir [-1 0])])
     \\ [(update beam :dir (comp vec reverse))]
-    \/ [(update beam :dir (comp vec reverse #(map - %)))]))
-
+    \/ [(update beam :dir (comp vec reverse #(map - %)))]
+    :out-of-board []))
 
 (defn answer [s]
-  (->> (str/split-lines s)
-       (init-board)))
+  (let [lines (str/split-lines s)
+        board (init-board lines)
+        turn  (fn [beams] 
+                (set (mapcat #(spawn % board) (map move beams))))]
+    (apply distinct? (take 1200 (iterate turn [{:pos [-1 0] :dir [1 0]}])))))
 
-;(answer (slurp "src/aoc2023/16/a.txt"))
+(time (answer (slurp "src/aoc2023/16/a.txt")))
 
+
+#_
 (answer ".|...\\....
 |.-.\\.....
 .....|-...
