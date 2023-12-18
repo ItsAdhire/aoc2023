@@ -15,11 +15,11 @@
 (defn spawn [beam board]
   (case (get board (:pos beam) :out-of-board)
     \. [beam]
-    \| (if (zero? (get-in beam [:dir 0]))
+    \| (if (zero? (first (:dir beam)))
          [beam]
          [(assoc beam :dir [0 1])
           (assoc beam :dir [0 -1])])
-    \- (if (zero? (get-in beam [:dir 1]))
+    \- (if (zero? (second (:dir beam))) 
          [beam]
          [(assoc beam :dir [1 0])
           (assoc beam :dir [-1 0])])
@@ -27,24 +27,25 @@
     \/ [(update beam :dir (comp vec reverse #(map - %)))]
     :out-of-board []))
 
+(defn simulate [seen? beams board]
+  (let [new-beams (->> beams
+                       (mapcat #(spawn % board))
+                       (map move)
+                       (remove seen?))
+        new-seen? (into seen? new-beams)]
+    (if (empty? new-beams)
+      seen?
+      (recur new-seen? new-beams board))))
+       
 (defn answer [s]
-  (let [lines (str/split-lines s)
-        board (init-board lines)
-        turn  (fn [beams] 
-                (set (mapcat #(spawn % board) (map move beams))))]
-    (apply distinct? (take 1200 (iterate turn [{:pos [-1 0] :dir [1 0]}])))))
-
+  (let [lines     (str/split-lines s)
+        board     (init-board lines)
+        init-beam {:pos [0 0] :dir [1 0]}]
+    (->> board
+         (simulate #{init-beam} [init-beam])
+         (map :pos)
+         (filter #(contains? board %))
+         (distinct)
+         (count))))
+     
 (time (answer (slurp "src/aoc2023/16/a.txt")))
-
-
-#_
-(answer ".|...\\....
-|.-.\\.....
-.....|-...
-........|.
-..........
-.........\\
-..../.\\\\..
-.-.-/..|..
-.|....-|.\\
-..//.|....")
